@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<title>README.html</title>
+
+</head>
+
+<body>
+
+<h1>MediaServer for mongodb GridFS Documentation</h1>
+
+<p>This server intended to serve files from mongodb GridFS.</p>
+
+<h2>How it works</h2>
+
+<p>This server works as HTTP server and expose two endpoints:</p>
+
+<ul>
+<li><code>/ping</code> respond <code>OK</code> with status code 200</li>
+<li><code>/:filename</code>
+<ul>
+<li>if file with <code>:filename</code> finded in connected GridFS:
+<ul>
+<li>send finded file over HTTP and set status code 200</li>
+<li>in case of malformed <code>Range</code> header it return error and appropriate status code</li>
+<li>in case of error during reading file from connected GridFS it return error and appropriate status code</li>
+</ul></li>
+</ul></li>
+<li>if file with name <code>:filename</code> not exists in connected GridFS
+<ul>
+<li>return status code 404 Not Found</li>
+</ul></li>
+</ul>
+
+<p>It also support <code>Range</code> header and serve requested chunks of file.</p>
+
+<p>All events such as: start server, stopping server, connection to GridFS, http requests, http responses, errors
+are logged in syslog with its own severity.</p>
+
+<p>It accepts startup commandline options which are explained in <code>Running</code> section.</p>
+
+<h2>System requirements</h2>
+
+<p>UNIX compatible os with installed golang compiler, check this link: <a href="http://golang.org/doc/install">installation instructions</a></p>
+
+<p>MediaServer was developed and tested only for go version 1.1.</p>
+
+<p>MediaServer also assume that environment variables was set in ~.profile or ~.bashrc</p>
+
+<pre><code>export GOROOT=$HOME/go
+export PATH=$PATH:$GOROOT/bin
+export GOPATH=/usr/local/go
+</code></pre>
+
+<h2>Compilation</h2>
+
+<p>MediaServer have a few external dependencies so they are have to be installed before compilation:</p>
+
+<pre><code>go get .
+</code></pre>
+
+<p>After sucesfull install of dependencies it can be compiled from directory with main source file:</p>
+
+<pre><code>go build mserv.go
+</code></pre>
+
+<p>The result of compilation will be <code>mserv</code> executable file which can be moved to appropriate directory or start inplace.</p>
+
+<pre><code>./mserv # with command line configuration parameters, see below
+</code></pre>
+
+<h2>Running</h2>
+
+<pre><code>&gt;./mserv -h
+Usage of ./mserv:
+   -c=8: cpu used (max)
+   -d="localhost:27017": url mongodb connection in format: myuser:mypass@localhost:40001,otherhost:40001/mydb
+   -f="media": name for the mongodb file system
+   -p=8080: port to listen on
+   -u="": user to run as
+   -v=false: print version information
+</code></pre>
+
+<h4>Example of how to run media server</h4>
+
+<pre><code>&gt;./mserv -d user:longPasSWorD@localhost:27017/media_files
+   serving on localhost:8080
+   utilizing 8 CPU
+   Media server started!
+</code></pre>
+
+</body>
+</html>
