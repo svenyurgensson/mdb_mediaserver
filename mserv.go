@@ -1,6 +1,7 @@
 package main
 
 import (
+        "github.com/kylelemons/go-gypsy/yaml"
         "labix.org/v2/mgo"
         "flag"
         "fmt"
@@ -10,15 +11,16 @@ import (
         "os"
         "os/user"
         "runtime"
+        "errors"
+        "strings"
         "strconv"
         "syscall"
         "os/signal"
 )
 
-const   Author  = "Yury Batenko"
-const   Version = "1.2"
 
-var  srv_bin string
+const   Author  = "Yury Batenko"
+const   Version = "1.3"
 
 /*
   database = Mongo::Connection.new('54.235.213.159', '27017').db('classic')
@@ -30,10 +32,20 @@ var  srv_bin string
 
 
 var (
-        session *mgo.Session
-        db      *mgo.Database
-        slog    *syslog.Writer
-        err      error
+        srv_bin        string
+        session       *mgo.Session
+        db            *mgo.Database
+        db_connect     string
+        slog          *syslog.Writer
+        http_port      int
+        server_user    string
+        cpu_cnt        int
+        mongo_hosts    string
+        mongo_user     string
+        mongo_pass     string
+        mongo_db       string
+        mongo_fs_name  string
+        err            error
 )
 
 type gridFSHandler struct {
@@ -41,48 +53,92 @@ type gridFSHandler struct {
         PathFile string
 }
 
-func main() {
+func usage(){
+        fmt.Fprintf(os.Stderr, "Usage: %s path/to/mserv.config.yaml\n", os.Args[0])
+        flag.PrintDefaults()
+        os.Exit(2)
+}
 
-        var (
-                srv_port   int
-                cpu_cnt    int
-        )
+func getConfig(filename string) {
+        config, err := yaml.ReadFile(filename)
+        if err != nil { log.Fatalf("readfile(%q): %s", filename, err)  }
 
-        empty := func(s string) bool {
-                return len(s) == 0
+        http_port64, err := config.GetInt("port")
+        if err != nil {
+                http_port = 9876
+        } else { http_port = int(http_port64) }
+
+        server_user, err  = config.Get("run_us")
+        if err != nil { server_user = "" }
+
+        cpu_cnt64, err  := config.GetInt("cpu_use")
+        if err != nil {
+                cpu_cnt = runtime.NumCPU()
+        } else {
+                cpu_cnt = int(cpu_cnt64)
         }
 
-        fPort    := flag.Int("p", 8080, "port to listen on")
-        fUser    := flag.String("u", "", "user to run as")
-        fVersion := flag.Bool("v", false, "print version information")
-        fCpu     := flag.Int("c", runtime.NumCPU(), "cpu used (max)")
-        fDb      := flag.String("d", "localhost:27017",
-                "url mongodb connection in format: myuser:mypass@localhost:40001,otherhost:40001/mydb")
-        fFSname  :=  flag.String("f", "media", "name for the mongodb file system")
+        mh, err := yaml.Child(config.Root, "mongodb.hosts")
+        if err != nil { fatal(errors.New("MongoDB hosts not defined!")) }
+        list, _ := mh.(yaml.List)
+        conn := []string{}
+        for i := 0; i < list.Len(); i++ {
+                conn = append(conn, strings.TrimSpace( yaml.Render(list.Item(i)) ))
+        }
+        mongo_hosts = strings.Join(conn, ",")
 
+        mongo_user, err    = config.Get("mongodb.user")
+        mongo_pass, err    = config.Get("mongodb.password")
+
+        mongo_db, err    = config.Get("mongodb.database")
+        if err != nil { fatal(errors.New("MongoDB database not defined!")) }
+
+        mongo_fs_name, err = config.Get("mongodb.fs")
+        if err != nil { mongo_fs_name = "fs" }
+}
+
+func main() {
+
+        empty := func(s string) bool { return len(s) == 0 }
+
+        flag.Usage = usage
         flag.Parse()
 
-        if *fVersion { version() }
+        srv_bin = os.Args[0]
 
-        if !empty(*fUser) { setuid(*fUser) }
+        args := flag.Args()
+        if len(args) < 1 {
+                fmt.Println("Config file is missing")
+                version()
+        }
 
-        cpu_cnt = *fCpu
+        getConfig(args[0])
+
+        if !empty(server_user) { setuid(server_user) }
+
         runtime.GOMAXPROCS(cpu_cnt)
 
         slog, err = syslog.New(syslog.LOG_INFO | syslog.LOG_ERR, "[mserv]")
         if err != nil { fatal(err) }
 
-        srv_port = *fPort
-        srv_addr := fmt.Sprintf("localhost:%d", srv_port)
+        srv_addr := fmt.Sprintf("localhost:%d", http_port)
         fmt.Printf("serving on %s\n", srv_addr)
         fmt.Printf("utilizing %d CPU\n", cpu_cnt)
 
-        slog.Err( fmt.Sprintf("Mserv started and serving on: %s utilize: %d CPU", srv_addr, cpu_cnt))
+        slog.Info(fmt.Sprintf("Mserv started and serving on: %s utilizing: %d CPU", srv_addr, cpu_cnt))
 
-        ConnectToMongo(*fDb)
+        if !empty(mongo_user) && !empty(mongo_pass) {
+                db_connect = fmt.Sprintf("%s:%s@%s/%s", mongo_user, mongo_pass, mongo_hosts, mongo_db)
+        } else {
+                db_connect = fmt.Sprintf("%s/%s", mongo_hosts, mongo_db)
+        }
+
+        fmt.Println(db_connect)
+
+        ConnectToMongo(db_connect)
         defer session.Close()
 
-        http.Handle("/", GridFSServer(db.GridFS(*fFSname), ""))
+        http.Handle("/", GridFSServer(db.GridFS(mongo_fs_name), ""))
         http.HandleFunc("/ping",  PingHandler)
 
         fmt.Println("Media server started!\n")
@@ -94,6 +150,7 @@ func main() {
                 ReadTimeout:  100000,
                 WriteTimeout: 0}
         log.Fatal(s.ListenAndServe())
+
 }
 
 
@@ -142,7 +199,7 @@ func setuid(username string) {
 }
 
 func version() {
-        fmt.Printf("%s Go-gridfs server author: %s version: %s\n", srv_bin, Author, Version)
+        fmt.Printf("%s Go-GridFS server; author: %s version: %s\n", srv_bin, Author, Version)
         os.Exit(0)
 }
 
