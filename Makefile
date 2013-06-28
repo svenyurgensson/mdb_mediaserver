@@ -2,10 +2,10 @@ SOURCE = $(wildcard *.go)
 TAG = $(shell git describe --tags)
 # $(tag) here will contain either `-1.0-` or just `-`
 ALL = \
-	$(foreach arch,32 64,\
+	$(foreach arch,64,\
     $(foreach tag,-$(TAG)- -,\
 	$(foreach suffix,linux osx,\
-		build/gostatic$(tag)$(arch)-$(suffix))))
+		build/mserv$(tag)$(arch)-$(suffix))))
 
 all: $(ALL)
 
@@ -25,15 +25,15 @@ fmt:
 # suffix itself is taken
 win.exe = windows
 osx = darwin
-build/gostatic-$(TAG)-64-%: $(SOURCE)
+build/mserv-$(TAG)-64-%: $(SOURCE)
 	@mkdir -p $(@D)
 	CGO_ENABLED=0 GOOS=$(firstword $($*) $*) GOARCH=amd64 go build -o $@
 
-build/gostatic-$(TAG)-32-%: $(SOURCE)
+build/mserv-$(TAG)-32-%: $(SOURCE)
 	@mkdir -p $(@D)
 	CGO_ENABLED=0 GOOS=$(firstword $($*) $*) GOARCH=386 go build -o $@
 
-build/gostatic-%: build/gostatic-$(TAG)-%
+build/mserv-%: build/gostatic-$(TAG)-%
 	@mkdir -p $(@D)
 	cd $(@D) && ln -sf $(<F) $(@F)
 
