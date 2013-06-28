@@ -36,12 +36,16 @@ To compile mserv from source you need:
 
 After sucesfull compilation directory build/ will contain linux and osx executables
 
-To deploy you need to run:
+To check what you can do with this script you need to run:
 
     mina tasks
 
 And read output
 
+To deploy server you need do:
+
+    make
+    mina server:deploy
 
 ## System requirements
 

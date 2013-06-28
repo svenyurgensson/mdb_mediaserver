@@ -18,8 +18,6 @@ end
 desc "Deploys the current version to the server."
 task :deploy => :environment do
   deploy do
-    invoke :'exchange:replace_mserv'
-
     to :launch do
       invoke :'server:restart'
     end
@@ -29,8 +27,8 @@ end
 def mserv_name
   (`cd build/ && find *-linux` || raise).strip
 end
-
 set :service_name, mserv_name
+
 
 namespace :exchange do
   desc "Delete remote mserv"
@@ -53,6 +51,13 @@ namespace :exchange do
 end
 
 namespace :server do
+  desc "Deploy new mediaserver and restart"
+  task :deploy do
+    invoke :'exchange:replace_mserv'
+    invoke :'server:restart'
+  end
+
+
   desc "Stop mediaserver"
   task :stop do
     queue! echo_cmd('pkill -SIGINT -f mserv 2>/dev/null')
