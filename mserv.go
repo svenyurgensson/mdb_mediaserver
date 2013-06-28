@@ -22,15 +22,6 @@ import (
 const   Author  = "Yury Batenko"
 const   Version = "1.3"
 
-/*
-  database = Mongo::Connection.new('54.235.213.159', '27017').db('classic')
-  database.authenticate('etv_import', 'asuh987237GSdzuffgzue3w26')
-  Mongo::GridFileSystem.new(database, 'media')
-
- ./mserv -d etv_import:asuh987237GSdzuffgzue3w26@54.235.213.159:27017/classic
-*/
-
-
 var (
         srv_bin        string
         session       *mgo.Session
@@ -118,7 +109,7 @@ func main() {
 
         runtime.GOMAXPROCS(cpu_cnt)
 
-        slog, err = syslog.New(syslog.LOG_INFO | syslog.LOG_ERR, "[mserv]")
+        slog, err = syslog.New(syslog.LOG_INFO | syslog.LOG_ERR | syslog.LOG_LOCAL0, "[mserv]")
         if err != nil { fatal(err) }
 
         srv_addr := fmt.Sprintf("localhost:%d", http_port)
@@ -207,15 +198,14 @@ func version() {
 
 func (g *gridFSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
         filename := r.URL.Path[1:]
+        slog.Info( fmt.Sprintf("%s %s %s", r.RemoteAddr, r.Method, r.URL) )
 
         file, err := g.GFS.Open(filename)
         if err != nil {
                 http.NotFound(w, r)
-                slog.Warning( fmt.Sprintf("requested: %s response: 404 Not Exists", filename))
+                slog.Warning( fmt.Sprintf("requested: %s response: 404 Not Exists", filename) )
                 return
         }
-
-        slog.Info( fmt.Sprintf("requested: %s", filename))
 
         defer file.Close()
 

@@ -52,18 +52,12 @@ The result of compilation will be `mserv` executable file which can be moved to 
 
 ## Running
 
-    >./mserv -h
-    Usage of ./mserv:
-       -c=8: cpu used (max)
-       -d="localhost:27017": url mongodb connection in format: myuser:mypass@localhost:40001,otherhost:40001/mydb
-       -f="media": name for the mongodb file system
-       -p=8080: port to listen on
-       -u="": user to run as
-       -v=false: print version information
+    >./mserv path/to/mserv.config.yaml
+
 
 #### Example of how to run media server
 
-    >./mserv -d user:longPasSWorD@localhost:27017/media_files
+    >./mserv mserv.config.yaml
        serving on localhost:8080
        utilizing 8 CPU
        Media server started!
