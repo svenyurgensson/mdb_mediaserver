@@ -22,42 +22,63 @@ are logged in syslog with its own severity.
 
 It accepts startup commandline options which are explained in `Running` section.
 
+## Development and deployment
+
+You need installed and fully worked Go compiler.
+
+In order to deploy you need have ruby installed and mina gem
+
+    gem i mina
+
+To compile mserv from source you need:
+
+    make
+
+After sucesfull compilation directory build/ will contain linux and osx executables
+
+To deploy you need to run:
+
+    mina tasks
+
+And read output
+
+
 ## System requirements
 
-UNIX compatible os with installed golang compiler, check this link: [installation instructions](http://golang.org/doc/install)
+Local development: Go compiler with installed cross-compile packages.
 
-MediaServer was developed and tested only for go version 1.1.
+Target server: linux 64bit
 
-MediaServer also assume that environment variables was set in ~.profile or ~.bashrc
+It need to have /etc/mserv directory with config file:
 
-    export GOROOT=$HOME/go
-    export PATH=$PATH:$GOROOT/bin
-    export GOPATH=/usr/local/go
+    mserv.config.yaml
 
-In order to satisfy dependencies it need to have VCS `bzr` installed
+It is a configuration file which mserv use to set port, mongodb connections and so on
 
-## Compilation
+    port: 9876
+    run_us:
+    cpu_use: 4
+    mongodb:
+        user: etv_import
+        password: PaSSword
+        hosts:
+            - 54.235.213.159:27017
+            - 54.235.213.160:27017
+        database: classic
+        fs: media
 
-MediaServer have a few external dependencies so they are have to be installed before compilation:
-
-    go get .
-
-After sucesfull install of dependencies it can be compiled from directory with main source file:
-
-    go build mserv.go
-
-The result of compilation will be `mserv` executable file which can be moved to appropriate directory or start inplace.
-
-    ./mserv # with command line configuration parameters, see below
+All options are self-explained by their names
 
 ## Running
 
-    >./mserv path/to/mserv.config.yaml
+    > ./mserv # with command line configuration parameters, see below
+
+    > ./mserv path/to/mserv.config.yaml
 
 
 #### Example of how to run media server
 
-    >./mserv mserv.config.yaml
+    > ./mserv mserv.config.yaml
        serving on localhost:8080
        utilizing 8 CPU
        Media server started!

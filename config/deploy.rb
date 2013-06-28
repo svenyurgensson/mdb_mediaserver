@@ -1,14 +1,9 @@
-#require 'mina/bundler'
-#require 'mina/rails'
-require 'mina/git'
-# require 'mina/rbenv'  # for rbenv support. (http://rbenv.org)
-# require 'mina/rvm'    # for rvm support. (http://rvm.io)
 
 # Optional settings:
 set :user, 'pubapi'    # Username in the server to SSH to.
 #   set :port, '30000'     # SSH port number.
 
-set :projectname, 'mediaserver'
+set :project_name, 'mediaserver'
 
 # Basic settings:
 #   domain       - The hostname to SSH to.
@@ -16,10 +11,10 @@ set :projectname, 'mediaserver'
 #   repository   - Git repo to clone from. (needed by mina/git)
 #   branch       - Branch name to deploy. (needed by mina/git)
 
-set :domain, '54.235.213.159'
-set :deploy_to, "home/#{user}/#{mediaserver}"
+set :domain,      '54.235.213.159'
+set :deploy_to,   "/home/#{user}/#{project_name}"
 set :repository,  "ssh://git@develop.earthtv.com:7999/ASSET/mserv.git"
-set :branch, 'master'
+set :branch,      'master'
 
 # Manually create these paths in shared/ (eg: shared/config/database.yml) in your server.
 # They will be linked in the 'deploy:link_shared_paths' step.
@@ -51,20 +46,54 @@ end
 desc "Deploys the current version to the server."
 task :deploy => :environment do
   deploy do
-    # Put things that will set up an empty directory into a fully set-up
-    # instance of your project.
-    invoke :'git:clone'
-    invoke :'deploy:link_shared_paths'
+    invoke :'exchange:replace_mserv'
 
     to :launch do
-      queue 'touch tmp/restart.txt'
+      invoke :'server:restart'
     end
   end
 end
 
-# For help in making your deploy script, see the Mina documentation:
-#
-#  - http://nadarei.co/mina
-#  - http://nadarei.co/mina/tasks
-#  - http://nadarei.co/mina/settings
-#  - http://nadarei.co/mina/helpers
+def mserv_name
+  (`cd build/ && find *-linux` || raise).strip
+end
+
+set :service_name, mserv_name
+
+namespace :exchange do
+  desc "Delete remote mserv"
+  task :delete_mserv do
+    queue! echo_cmd("rm -f #{deploy_to}/mserv*-linux")
+  end
+
+  desc "Copy local build to remote server"
+  task :copy_mserv do
+    puts "copying #{service_name} to remote server..."
+    `rsync -avz build/#{service_name} #{user}@#{domain}:#{deploy_to}`
+  end
+
+  desc "Replace old mserv with new from local build"
+  task :replace_mserv do
+    invoke :'server:stop'
+    invoke :'exchange:delete_mserv'
+    invoke :'exchange:copy_mserv'
+  end
+end
+
+namespace :server do
+  desc "Stop mediaserver"
+  task :stop do
+    queue! echo_cmd('pkill -SIGINT -f mserv 2>/dev/null')
+  end
+
+  desc "Start mediaserver"
+  task :start do
+    queue! echo_cmd("nohup #{deploy_to}/#{service_name} /etc/mserv/mserv.config.yaml 2>/dev/null &")
+  end
+
+  desc "Restart mediaserver"
+  task :restart do
+    invoke :'server:stop'
+    invoke :'server:start'
+  end
+end
