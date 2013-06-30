@@ -1,4 +1,4 @@
 *.txt
 log/*
 tmp/*
-builds/*
+build/*
