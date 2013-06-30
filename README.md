@@ -73,6 +73,22 @@ It is a configuration file which mserv use to set port, mongodb connections and 
 
 All options are self-explained by their names
 
+## Deploy
+
+## Using ruby library `mina`
+
+## Using shell
+
+    # copy binary
+    rsync -avz build/mserv-v1.3-64-linux pubapi@54.235.213.159/home/pubapi/mediaserver/
+
+    #!/usr/bin/env bash
+    # Executing the following via 'ssh pubapi@54.235.213.159 -t':
+    #
+    pkill -SIGINT -f mserv 2>/dev/null
+    rm -f /home/pubapi/mediaserver/mserv*-linux
+    nohup /home/pubapi/mediaserver/mserv-v1.3-64-linux /etc/mserv/mserv.config.yaml 2>/dev/null &
+
 ## Running
 
     > ./mserv # with command line configuration parameters, see below
