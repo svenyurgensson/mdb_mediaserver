@@ -17,13 +17,14 @@ import (
         "os/signal"
         "os/user"
         "runtime"
+        "time"
         "strconv"
         "strings"
         "syscall"
 )
 
 const Author = "Yury Batenko"
-const Version = "1.5"
+const Version = "1.6"
 
 var (
         srv_bin       string
@@ -43,6 +44,7 @@ var (
         ping_resp     string
         req_total     uint64
         req_failed    uint64
+        boot_time     string
 )
 
 type gridFSHandler struct {
@@ -158,6 +160,8 @@ func main() {
         http.HandleFunc("/ping", PingHandler)
 
         fmt.Println("Media server started!\n")
+        
+        boot_time = fmt.Sprintf(time.Now().Format(time.RFC3339))
 
         setSignalCatchers()
 
@@ -246,8 +250,8 @@ func PingHandler(w http.ResponseWriter, r *http.Request) {
         e := session.Ping()
         connected := true
         if e != nil { connected = false }
-        ping_resp = `{"status": "OK","mongo_database":{"connected": %t,"MasterConns": %d,"SlaveConns": %d,"SentOps": %d,"ReceivedOps": %d,"ReceivedDocs": %d,"SocketsAlive": %d,"SocketsInUse": %d,"SocketRefs": %d},"incoming_requests":{"total": %d,"failed": %d}}`
-        str := fmt.Sprintf(ping_resp, connected, stat.MasterConns, stat.SlaveConns, stat.SentOps, stat.ReceivedOps, stat.ReceivedDocs, stat.SocketsAlive, stat.SocketsInUse, stat.SocketRefs, req_total, req_failed)
+        ping_resp = `{"status": "OK","version": "%s","boot_timestamp": "%s", "mongo_database":{"connected": %t,"MasterConns": %d,"SlaveConns": %d,"SentOps": %d,"ReceivedOps": %d,"ReceivedDocs": %d,"SocketsAlive": %d,"SocketsInUse": %d,"SocketRefs": %d},"incoming_requests":{"total": %d,"failed": %d}}`
+        str := fmt.Sprintf(ping_resp, Version, boot_time, connected, stat.MasterConns, stat.SlaveConns, stat.SentOps, stat.ReceivedOps, stat.ReceivedDocs, stat.SocketsAlive, stat.SocketsInUse, stat.SocketRefs, req_total, req_failed)
 
         fmt.Fprint(w, str)
 }
