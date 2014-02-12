@@ -1,10 +1,15 @@
+# Production
 port: 9876
 run_us:
 cpu_use: 4
 mongodb:
   user: etv_import
-  password: asuh987237GSdzuffgzue3w26
+  password: asuh987237GSdzuffgzue3w267
+    #develASU74
+   #asuh987237GSdzuffgzue3w26
   hosts:
-    - 54.235.213.159:27017
-  database: classic
+    - 188.138.112.158:27017
+    #- 188.138.11.13:27017
+    #- 54.235.213.159:27017
+  database: hd
   fs: media

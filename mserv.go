@@ -24,7 +24,7 @@ import (
 )
 
 const Author = "Yury Batenko"
-const Version = "1.6"
+const Version = "1.7"
 
 var (
         srv_bin       string
@@ -240,6 +240,19 @@ func (g *gridFSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
         defer file.Close()
 
+        etag := file.MD5()
+        if inm := r.Header.Get("If-None-Match"); inm != "" {
+                if inm == etag || inm == "*" {
+                                h := w.Header()
+                                delete(h, "Content-Type")
+                                delete(h, "Content-Length")
+                                w.WriteHeader(http.StatusNotModified)
+                                return
+                        }
+        }
+
+        w.Header().Set("Cache-Control", "max-age=86400, public, must-revalidate, proxy-revalidate")
+        w.Header().Set("ETag", etag)
         w.Header().Set("Accept-Ranges", "bytes")
         w.Header().Set("Content-Type", file.ContentType())
 
