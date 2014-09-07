@@ -1,3 +1,6 @@
+# 07 Sep 2014
+* Fix issue with serving some of files adding Seek for the end of file before streaming
+
 # 11 Feb 2014
 
 * Add Cache-Control Header into response
