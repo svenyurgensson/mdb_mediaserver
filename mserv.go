@@ -260,7 +260,9 @@ func (g *gridFSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// otherwise we get: seeker can't seek error
 	_, err = file.Seek(0, os.SEEK_END)
 
+	slog.Info(fmt.Sprintf("Starting upload of %s", filename))
 	http.ServeContent(w, r, file.Name(), file.UploadDate(), file)
+	slog.Info(fmt.Sprintf("Finished upload of %s", filename))
 }
 
 func PingHandler(w http.ResponseWriter, r *http.Request) {
