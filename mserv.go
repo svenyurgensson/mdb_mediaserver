@@ -24,7 +24,7 @@ import (
 )
 
 const Author = "Yury Batenko"
-const Version = "1.8 / 2014-09-07"
+const Version = "1.8.1 / 2014-11-11"
 
 var (
 	srv_bin       string
