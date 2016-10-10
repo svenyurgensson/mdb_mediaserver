@@ -1,4 +1,9 @@
+# 10 Sep 2016
+
+* Update mgo to latest version, in order to proper work with mongo ver > 3.x
+
 # 07 Sep 2014
+
 * Fix issue with serving some of files adding Seek for the end of file before streaming
 
 # 11 Feb 2014
