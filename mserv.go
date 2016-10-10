@@ -324,6 +324,7 @@ func ConnectToMongo(connection string) {
         cred := mgo.Credential{
             Username: mongo_user,
             Password: mongo_pass,
+            Source: "admin",
             Mechanism: "SCRAM-SHA-1",
         }
         err = session.Login(&cred)
