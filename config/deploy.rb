@@ -1,6 +1,6 @@
 set :user, 'pubapi'    # Username in the server to SSH to.
 set :project_name, 'mediaserver'
-set :domain,      '54.235.213.159'
+set :domain,      '-.-.-.-' # IP address
 set :deploy_to,   "/home/#{user}/#{project_name}"
 
 
